@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Interactive career finder for marine mammal careers, from the IMarEST Marine Mammal Special Interest Group.">
+<link rel="icon" href="assets/imarest-logo.png">
+<title>Marine Mammal Career Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: navy masthead band → two-column workbench (filter rail + ranked profile list) → slide-in profile sheet */
+:root{
+  --bg:#edf3f5; --surface:#ffffff; --surface-2:#f5f9fa; --ink:#0c2230; --muted:#4f6875; --line:#d3e1e6;
+  --accent:#1d6a86; --accent-soft:#d7eaf1; --tide:#6fb0c6; --navy:#0b1f2a; --navy-ink:#e8f3f7;
+  --draft:#9a5b0f; --draft-soft:#fbecd4; --match:#1f7a55;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#07141b; --surface:#0e222d; --surface-2:#122a36; --ink:#e2eef2; --muted:#93b1bd; --line:#1f3b48;
+  --accent:#7cc4db; --accent-soft:#163a48; --tide:#7cc4db; --navy:#040d12; --navy-ink:#e2eef2;
+  --draft:#f0b45a; --draft-soft:#3a2a12; --match:#5fd19d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#07141b; --surface:#0e222d; --surface-2:#122a36; --ink:#e2eef2; --muted:#93b1bd; --line:#1f3b48;
+  --accent:#7cc4db; --accent-soft:#163a48; --tide:#7cc4db; --navy:#040d12; --navy-ink:#e2eef2;
+  --draft:#f0b45a; --draft-soft:#3a2a12; --match:#5fd19d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body)}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.mast{background:var(--navy) url("assets/photos/humpbacks.jpg") right 30% / cover no-repeat;color:#e8f3f7;position:relative;overflow:hidden}
+header.mast::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(6,18,26,.94) 0%,rgba(6,18,26,.82) 45%,rgba(6,18,26,.35) 100%);pointer-events:none}
+.mast .wrap{padding-block:32px 28px;position:relative;z-index:1}
+.mast .headrow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.mast .logo{flex:none;width:clamp(76px,11vw,124px);height:auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,.35))}
+.eyebrow{font:600 13px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:#7cc4db}
+h1{font:400 clamp(34px,5vw,54px)/1 var(--display);margin:10px 0 6px;text-wrap:balance}
+h1 b{font-weight:700;color:#7cc4db;display:block}
+.mast p{max-width:58ch;margin:10px 0 0;color:rgba(232,243,247,.86)}
+.search{margin-top:20px;display:flex;gap:8px;max-width:720px}
+.search input{flex:1;min-width:0;font:inherit;padding:12px 14px;border-radius:10px;border:1px solid transparent;background:var(--surface);color:var(--ink)}
+.search input:focus{outline:2px solid var(--tide);outline-offset:2px}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.presets span{font-size:13px;color:rgba(232,243,247,.75)}
+.presets button{font:500 13px var(--body);padding:6px 11px;border-radius:999px;border:1px solid color-mix(in srgb,var(--tide) 55%,transparent);background:rgba(6,18,26,.35);color:#e8f3f7;cursor:pointer}
+.presets button:hover{background:color-mix(in srgb,var(--tide) 22%,transparent)}
+main.wrap{display:grid;grid-template-columns:290px minmax(0,1fr);gap:28px;padding-block:24px 48px}
+@media (max-width:860px){main.wrap{grid-template-columns:1fr}}
+aside.rail{display:flex;flex-direction:column;gap:20px}
+@media (min-width:861px){aside.rail{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;padding-right:4px}}
+.facet h3{font:600 15px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;margin:0 0 9px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 13.5px/1.2 var(--body);padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.chip:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.toggles{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.toggles label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{font:500 13.5px var(--body);padding:7px 12px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.status{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.status h2{font:600 26px/1.1 var(--display);margin:0}
+.status .sub{color:var(--muted);font-size:14px}
+.clearbtn{font:600 16px var(--body);display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:999px;border:2px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer;min-height:44px}
+.clearbtn:hover{filter:brightness(1.08)}
+.clearbtn:disabled{background:transparent;color:var(--muted);border-color:var(--line);cursor:default;filter:none}
+.clearbtn svg{width:16px;height:16px}
+.rail .clearbtn{width:100%;justify-content:center}
+@media (min-width:861px){.status .clearbtn{display:none}}
+@media (max-width:860px){.rail .clearbtn{display:none}}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;font:inherit;color:inherit;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.card .top{display:flex;gap:12px;align-items:flex-start}
+.mono{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font:600 16px var(--display);letter-spacing:.04em;background:var(--navy);color:var(--tide)}
+.mono.role{border-radius:10px;background:var(--accent-soft);color:var(--accent)}
+.mono img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.card .mono.face{width:52px;height:52px}
+.sheet .portrait{width:112px;height:112px;border-radius:50%;object-fit:cover;display:block;margin-top:8px;border:3px solid var(--accent-soft)}
+.card h4{font:600 20px/1.1 var(--display);margin:0;text-wrap:balance}
+.card .who{font-size:13.5px;color:var(--muted);margin-top:3px}
+.kind{font:600 11.5px/1 var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.kind.draft{color:var(--draft)}
+.card p{margin:0;font-size:14.5px;color:var(--muted)}
+.meter{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meter i{flex:1;height:5px;border-radius:3px;background:var(--line);overflow:hidden;display:block}
+.meter i b{display:block;height:100%;background:var(--match)}
+.why{display:flex;flex-wrap:wrap;gap:5px}
+.why span{font-size:12px;padding:3px 7px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink)}
+.why span.hit{background:color-mix(in srgb,var(--match) 14%,var(--surface));border-color:color-mix(in srgb,var(--match) 45%,transparent)}
+.badge-draft{font:600 11.5px var(--body);padding:3px 7px;border-radius:5px;background:var(--draft-soft);color:var(--draft)}
+.empty{padding:32px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted)}
+.band{margin:32px 0 0;height:clamp(160px,24vw,260px);border-radius:14px;background:var(--navy) center 60% / cover no-repeat;position:relative;overflow:hidden;display:flex;align-items:flex-end}
+.band figcaption{position:relative;margin:0;padding:14px 18px;font:500 clamp(18px,2.4vw,24px)/1.15 var(--display);color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5);max-width:30ch}
+.band::before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,18,26,.55),transparent 60%)}
+.dolphins{height:clamp(120px,18vw,220px);background:#6fb0c6 url("assets/photos/dolphins.jpg") center 82% / cover no-repeat}
+.essentials{margin-top:20px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.essentials h3{font:600 20px var(--display);margin:0 0 4px}
+.essentials ul{columns:2 260px;margin:10px 0 0;padding-left:18px;font-size:14.5px}
+.essentials li{break-inside:avoid;margin-bottom:4px}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(4,13,18,.45);z-index:20}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--surface);z-index:21;overflow:auto;box-shadow:-12px 0 40px rgba(0,0,0,.25);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) 0}
+.sheet .in{padding:22px 24px 40px}
+.sheet .close{position:sticky;top:0;float:right;font:600 14px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
+.sheet h2{font:600 32px/1.05 var(--display);margin:12px 0 4px;text-wrap:balance}
+.sheet .who{color:var(--muted);margin:0 0 14px}
+.sheet h5{font:600 15px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:20px 0 6px}
+.sheet ul{margin:0;padding-left:18px}
+.sheet li{margin-bottom:3px}
+.sheet blockquote{margin:0;padding:10px 14px;border-left:3px solid var(--tide);background:var(--surface-2);border-radius:0 8px 8px 0;font-size:15px}
+.tagrow{display:flex;flex-wrap:wrap;gap:5px}
+.tagrow span{font-size:12.5px;padding:3px 8px;border-radius:5px;background:var(--accent-soft);color:var(--accent)}
+.related{display:flex;flex-direction:column;gap:6px}
+.related button{text-align:left;font:inherit;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink);cursor:pointer}
+.related button:hover{border-color:var(--accent)}
+.related small{color:var(--muted)}
+.draftnote{margin-top:14px;padding:10px 12px;border-radius:8px;background:var(--draft-soft);color:var(--draft);font-size:14px}
+footer{color:var(--muted);font-size:13px;padding-block:0 32px}
+@media (prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}
+</style>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<header class="mast">
+  <div class="wrap">
+    <div class="headrow">
+      <div>
+        <div class="eyebrow">IMarEST Marine Mammal Special Interest Group</div>
+        <h1>Careers with <b>Marine Mammals</b></h1>
+      </div>
+      <img class="logo" src="assets/imarest-logo.png" alt="Institute of Marine Engineering, Science &amp; Technology">
+    </div>
+    <p>Tell us where you want to work, what you're good at and how you want to live. We'll match you with career paths and real people already doing the work.</p>
+    <form class="search" id="searchForm" role="search">
+      <input id="q" type="search" placeholder="Try keywords: acoustics, drones, R, strandings, offshore, policy…" aria-label="Search careers by keyword" autocomplete="off">
+    </form>
+    <div class="presets" id="presets"><span>Start from:</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <aside class="rail" aria-label="Filters">
+    <button type="button" class="clearbtn" id="clear2"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>Clear all filters</button>
+    <div class="facet">
+      <h3>Show</h3>
+      <div class="seg" id="kindSeg">
+        <button type="button" data-k="all" aria-pressed="true">Everything</button>
+        <button type="button" data-k="role" aria-pressed="false">Career paths</button>
+        <button type="button" data-k="person" aria-pressed="false">Role models</button>
+      </div>
+    </div>
+    <div id="facets"></div>
+    <div class="facet toggles">
+      <label><input type="checkbox" id="showDraft" checked> Include proposed new careers</label>
+    </div>
+  </aside>
+
+  <section aria-live="polite">
+    <div class="status">
+      <div>
+        <h2 id="count"></h2>
+        <div class="sub" id="sub"></div>
+      </div>
+      <button type="button" class="clearbtn" id="clear"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>Clear all filters</button>
+    </div>
+    <div class="results" id="results"></div>
+
+    <figure class="band" style="background-image:url('assets/photos/sea-lion.jpg')"><figcaption>Every one of these paths starts with curiosity about animals like this one.</figcaption></figure>
+    <div class="essentials">
+      <h3>Skills almost every profile asks for</h3>
+      <div class="sub" style="color:var(--muted);font-size:14px">From the SIG's "essential skills for marine mammal professionals".</div>
+      <ul>
+        <li>Strong academic grounding, including data analysis</li>
+        <li>Explaining technical issues to specialists and non-specialists</li>
+        <li>Teamwork and adaptability</li>
+        <li>Working to tight timescales in different environments</li>
+        <li>Professionalism and interpersonal skills</li>
+        <li>Project management, organisation and time management</li>
+        <li>Problem solving and intrinsic motivation</li>
+        <li>Attention to detail and safety regulations</li>
+        <li>GIS for mapping data and habitat characterisation</li>
+        <li>R for bioacoustics, visualisation and analysis</li>
+        <li>Python for some bioacoustic tools</li>
+        <li>Fundamentals of statistics</li>
+        <li>Excel and SQLite database experience</li>
+      </ul>
+    </div>
+  </section>
+</main>
+<div class="dolphins" role="img" aria-label="Dolphins surfacing"></div>
+<footer class="wrap" style="padding-top:18px">Content adapted from the IMarEST MM SIG brochure <a href="docs/Careers-with-Marine-Mammals-IMarEST-MMSIG-2022.pdf" style="color:var(--accent)">"Careers with Marine Mammals" (2022, PDF)</a> and role model case studies at <a href="https://www.imarest.org/rolemodels" style="color:var(--accent)">imarest.org/rolemodels</a>. Profiles marked <b>Proposed</b> are draft additions for SIG review.</footer>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden><div class="in" id="sheetIn"></div></div>
+
+<script src="data/profiles.js"></script>
+<script>
+const {FACETS,P,PRESETS}=window;
+const state = {q:"",kind:"all",draft:true,sel:{setting:[],sector:[],skills:[],lifestyle:[],entry:[]}};
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const initials = p => p.kind==="person" ? p.person.split(" ").map(w=>w[0]).filter(c=>/[A-Z]/.test(c)).slice(0,2).join("") : p.title.replace(/[()\/&]/g," ").split(/\s+/).filter(w=>/^[A-Z]/.test(w)).slice(0,2).map(w=>w[0]).join("");
+
+// synonyms so free text lands on facet values
+const SYN = {acoustic:"Acoustics & PAM",pam:"Acoustics & PAM",sound:"Acoustics & PAM",hydrophone:"Acoustics & PAM",noise:"Acoustics & PAM",drone:"Drones & aerial survey",uas:"Drones & aerial survey",aerial:"Drones & aerial survey",r:"Coding (R / Python)",python:"Coding (R / Python)",code:"Coding (R / Python)",coding:"Coding (R / Python)",programming:"Coding (R / Python)",gis:"GIS & mapping",map:"GIS & mapping",mapping:"GIS & mapping",vet:"Veterinary & medical",veterinary:"Veterinary & medical",stranding:"Hands-on animal care",strandings:"Hands-on animal care",rescue:"Rescue & rehab",rehab:"Rescue & rehab",genetics:"Genetics & lab methods",dna:"Genetics & lab methods",lab:"Lab",offshore:"At sea / offshore",sea:"At sea / offshore",boat:"At sea / offshore",vessel:"At sea / offshore",office:"Office / remote",remote:"Office / remote",policy:"Policy & management",law:"Regulation & compliance",regulation:"Regulation & compliance",compliance:"Regulation & compliance",teach:"Teaching & mentoring",teaching:"Teaching & mentoring",mentoring:"Teaching & mentoring",outreach:"Communication & outreach",education:"Communication & outreach",grants:"Fundraising & grants",funding:"Fundraising & grants",stats:"Data analysis & stats",statistics:"Data analysis & stats",data:"Data analysis & stats",tourism:"Eco-tourism",guide:"Eco-tourism",ngo:"NGO & charity",charity:"NGO & charity",government:"Government",academia:"Academia",university:"Academia",phd:"PhD",travel:"Frequent travel",management:"Leadership & project mgmt",leadership:"Leadership & project mgmt"};
+
+const textOf = p => [p.title,p.person,p.summary,...(p.activities||[]),...(p.keyskills||[]),...(p.education||[]),...(p.path||[]),p.advice,...p.skills,...p.setting,...p.sector,...p.lifestyle,...p.entry].filter(Boolean).join(" ").toLowerCase();
+P.forEach(p=>p._t=textOf(p));
+const tagsOf = p => [...p.setting,...p.sector,...p.skills,...p.lifestyle,...p.entry];
+
+function score(p){
+  const hits=[]; let s=0, max=0;
+  for(const f in state.sel){ for(const v of state.sel[f]){ max+= f==="skills"?2:1.5; if(p[f].includes(v)){s+= f==="skills"?2:1.5; hits.push(v);} } }
+  const toks = state.q.toLowerCase().split(/[\s,]+/).filter(t=>t.length>0);
+  for(const t of toks){
+    max+=1.5;
+    const syn=SYN[t];
+    if(syn && tagsOf(p).includes(syn)){s+=1.5;if(!hits.includes(syn))hits.push(syn);}
+    else if(t.length>2 && p._t.includes(t)){s+=1;hits.push("“"+t+"”");}
+  }
+  return {s,max,hits};
+}
+
+function renderFacets(){
+  $("#facets").innerHTML = Object.entries(FACETS).map(([k,f])=>`<div class="facet" style="margin-bottom:20px"><h3>${f.label}</h3><div class="chips">${f.opts.map(o=>`<button type="button" class="chip" data-f="${k}" data-v="${esc(o)}" aria-pressed="${state.sel[k].includes(o)}">${esc(o)}</button>`).join("")}</div></div>`).join("");
+}
+function render(){
+  document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",state.sel[c.dataset.f].includes(c.dataset.v)));
+  document.querySelectorAll("#kindSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===state.kind));
+  const active = state.q.trim() || Object.values(state.sel).some(a=>a.length);
+  let list = P.filter(p=>(state.kind==="all"||p.kind===state.kind)&&(state.draft||!p.draft)).map(p=>({p,...score(p)}));
+  if(active){ list=list.filter(r=>r.s>0).sort((a,b)=>b.s-a.s || a.p.kind.localeCompare(b.p.kind)); }
+  const roles=list.filter(r=>r.p.kind==="role").length, ppl=list.length-roles;
+  $("#count").textContent = active ? `${list.length} match${list.length===1?"":"es"}` : "All profiles";
+  $("#sub").textContent = `${roles} career path${roles===1?"":"s"} · ${ppl} role model${ppl===1?"":"s"}${active?" · best matches first":" · pick filters or type keywords to rank them"}`;
+  $("#clear").disabled=!active;$("#clear2").disabled=!active;
+  $("#results").innerHTML = list.length ? list.map(({p,s,max,hits})=>{
+    const pct = active&&max? Math.round(100*Math.min(1,s/max)) : null;
+    const chips = active ? hits.slice(0,5).map(h=>`<span class="hit">${esc(h)}</span>`).join("") : p.skills.slice(0,3).map(h=>`<span>${esc(h)}</span>`).join("");
+    return `<button type="button" class="card" data-id="${p.id}">
+      <div class="top"><div class="mono ${p.kind==="role"?"role":"face"}" aria-hidden="true">${p.kind==="person"?`<img src="assets/people/${p.id}.jpg" alt="" loading="lazy">`:esc(initials(p))}</div>
+      <div style="min-width:0"><div class="kind ${p.draft?"draft":""}">${p.kind==="person"?"Role model":p.draft?"Proposed career path":"Career path"}</div>
+      <h4>${esc(p.kind==="person"?p.person:p.title)}</h4>${p.kind==="person"?`<div class="who">${esc(p.title)}</div>`:""}</div></div>
+      <p>${esc(p.summary)}</p>
+      ${pct!==null?`<div class="meter"><i><b style="width:${pct}%"></b></i>${pct}% match</div>`:""}
+      <div class="why">${chips}</div></button>`;
+  }).join("") : `<div class="empty">Nothing matches every choice. Try removing a filter or using a broader keyword.</div>`;
+}
+
+function related(p){
+  const t=new Set(tagsOf(p));
+  return P.filter(o=>o!==p&&(state.draft||!o.draft)).map(o=>{const ot=tagsOf(o);const n=ot.filter(x=>t.has(x)).length;return {o,j:n/(t.size+ot.length-n)};})
+    .sort((a,b)=>b.j-a.j).slice(0,4).map(r=>r.o);
+}
+let lastFocus=null;
+function openSheet(id){
+  const p=P.find(x=>x.id===id); if(!p)return;
+  const list=(h,a)=>a&&a.length?`<h5>${h}</h5><ul>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"";
+  const tags=(h,a)=>`<h5>${h}</h5><div class="tagrow">${a.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`;
+  $("#sheetIn").innerHTML = `<button type="button" class="close" id="closeSheet">Close</button>
+    <div class="kind ${p.draft?"draft":""}">${p.kind==="person"?"Role model":p.draft?"Proposed career path":"Career path"}</div>
+    ${p.kind==="person"?`<img class="portrait" src="assets/people/${p.id}.jpg" alt="${esc(p.person)}">`:""}
+    <h2 id="sheetTitle">${esc(p.kind==="person"?p.person:p.title)}</h2>
+    ${p.kind==="person"?`<p class="who">${esc(p.title)}</p>`:""}
+    <p>${esc(p.summary)}</p>
+    ${p.draft?`<div class="draftnote">Draft profile proposed for the SIG to review. Not yet part of the published brochure; content needs checking by a practitioner.</div>`:""}
+    ${list("What the work involves",p.activities)}
+    ${list("Education & training",p.education)}
+    ${list("Career path",p.path)}
+    ${list("Key skills & experience",p.keyskills)}
+    ${p.advice?`<h5>In their words (summarised)</h5><blockquote>${esc(p.advice)}</blockquote>`:""}
+    ${tags("Where",p.setting)}${tags("Sector",p.sector)}${tags("Skills",p.skills)}${tags("Lifestyle",p.lifestyle)}${tags("Typical entry",p.entry)}
+    <h5>Similar profiles</h5><div class="related">${related(p).map(o=>`<button type="button" data-id="${o.id}"><b>${esc(o.kind==="person"?o.person:o.title)}</b><br><small>${o.kind==="person"?esc(o.title):o.draft?"Proposed career path":"Career path"}</small></button>`).join("")}</div>
+    ${p.kind==="person"?`<p style="margin-top:20px;font-size:14px;color:var(--muted)">Full case study: imarest.org/rolemodels</p>`:""}`;
+  $("#sheet").hidden=false;$("#scrim").hidden=false;$("#sheet").scrollTop=0;
+  $("#closeSheet").focus();
+}
+function closeSheet(){$("#sheet").hidden=true;$("#scrim").hidden=true;if(lastFocus)lastFocus.focus();}
+
+renderFacets();
+$("#presets").insertAdjacentHTML("beforeend",PRESETS.map((p,i)=>`<button type="button" data-i="${i}">${esc(p.label)}</button>`).join(""));
+document.addEventListener("click",e=>{
+  const chip=e.target.closest(".chip");
+  if(chip){const a=state.sel[chip.dataset.f],v=chip.dataset.v,i=a.indexOf(v);i<0?a.push(v):a.splice(i,1);render();return;}
+  const card=e.target.closest(".card");
+  if(card){lastFocus=card;openSheet(card.dataset.id);return;}
+  const rel=e.target.closest(".related button");
+  if(rel){openSheet(rel.dataset.id);return;}
+  const pre=e.target.closest("#presets button");
+  if(pre){const p=PRESETS[+pre.dataset.i];for(const k in state.sel)state.sel[k]=[...(p.sel[k]||[])];state.q="";$("#q").value="";render();$("#results").scrollIntoView({behavior:"smooth",block:"start"});return;}
+  const k=e.target.closest("#kindSeg button");
+  if(k){state.kind=k.dataset.k;render();return;}
+  if(e.target.id==="closeSheet"||e.target.id==="scrim")closeSheet();
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#sheet").hidden)closeSheet();});
+$("#q").addEventListener("input",e=>{state.q=e.target.value;render();});
+$("#searchForm").addEventListener("submit",e=>e.preventDefault());
+$("#showDraft").addEventListener("change",e=>{state.draft=e.target.checked;render();});
+const clearAll=()=>{for(const k in state.sel)state.sel[k]=[];state.q="";$("#q").value="";render();};
+$("#clear").addEventListener("click",clearAll);$("#clear2").addEventListener("click",clearAll);
+render();
+</script>
+
+</body>
+</html>
