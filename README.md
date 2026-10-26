@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://lizferguson5.github.io/imarest-marine-mammal-career-finder/"><img src="docs/screenshots/finder.png" alt="Career finder showing ranked matches for at-sea, acoustics and tech interests" width="860"></a>
+  <a href="https://lizferguson5.github.io/imarest-marine-mammal-career-finder/"><img src="docs/screenshots/finder.png" alt="Career finder showing Frances Robertson and Eric Archer as top matches for government, coding and PhD-level careers" width="860"></a>
   <br><sub>Click the screenshot to open the live site.</sub>
 </p>
 
