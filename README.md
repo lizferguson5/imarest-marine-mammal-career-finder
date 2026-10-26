@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="https://lizferguson5.github.io/imarest-marine-mammal-career-finder/"><img src="docs/screenshots/finder.png" alt="Career finder showing Frances Robertson and Eric Archer as top matches for government, coding and PhD-level careers" width="860"></a>
+  <a href="https://lizferguson5.github.io/imarest-marine-mammal-career-finder/"><img src="docs/screenshots/finder-v2.png" alt="Career finder showing Frances Robertson and Eric Archer as top matches for government, coding and PhD-level careers" width="860"></a>
   <br><sub>Click the screenshot to open the live site.</sub>
 </p>
 
@@ -38,9 +38,9 @@ The original guide is an 11-page PDF of tables and role model case studies. This
 - **Jump in with presets** such as *I love tech and the sea* or *Fastest way in*.
 
 <p align="center">
-  <img src="docs/screenshots/profile.png" alt="Role model profile panel for Lorenzo Scala" width="420">
+  <img src="docs/screenshots/profile-v2.png" alt="Role model profile panel for Lorenzo Scala" width="420">
   &nbsp;
-  <img src="docs/screenshots/mobile.png" alt="Career finder on a phone" width="200">
+  <img src="docs/screenshots/mobile-v2.png" alt="Career finder on a phone" width="200">
 </p>
 
 ## What's inside
