@@ -49,6 +49,18 @@ main.wrap{display:grid;grid-template-columns:290px minmax(0,1fr);gap:28px;paddin
 aside.rail{display:flex;flex-direction:column;gap:20px}
 @media (min-width:861px){aside.rail{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;padding-right:4px}}
 .facet h3{font:600 15px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;margin:0 0 9px;color:var(--muted)}
+#facets{display:flex;flex-direction:column;gap:20px}
+.group{padding-top:18px;border-top:1px solid var(--line)}
+.group h3{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--ink);font-size:16px}
+.group h3 .gc{font:600 12px var(--body);letter-spacing:0;text-transform:none;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 9px}
+@media (max-width:860px){
+  .railbody{gap:12px!important}
+  #facets{gap:12px}
+  .group{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:14px 14px 16px}
+  .group h3{font-size:17px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .group .chip{background:var(--surface)}
+  .group .chip[aria-pressed="true"]{background:var(--accent)}
+}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font:500 13.5px/1.2 var(--body);padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .chip:hover{border-color:var(--accent)}
@@ -69,6 +81,20 @@ aside.rail{display:flex;flex-direction:column;gap:20px}
 .rail .clearbtn{width:100%;justify-content:center}
 @media (min-width:861px){.status .clearbtn{display:none}}
 @media (max-width:860px){.rail .clearbtn{display:none}}
+.filtertoggle{display:none}
+@media (max-width:860px){
+  .filtertoggle{display:flex;align-items:center;justify-content:space-between;width:100%;font:600 16px var(--body);padding:12px 16px;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+  .filtertoggle .n{font:600 13px var(--body);background:var(--accent);color:var(--surface);border-radius:999px;padding:2px 9px;margin-left:8px}
+  .filtertoggle svg{width:18px;height:18px;transition:transform .2s}
+  .filtertoggle[aria-expanded="true"] svg{transform:rotate(180deg)}
+  .railbody{display:none}
+  .rail.open .railbody{display:flex;flex-direction:column;gap:20px}
+  .done{display:block;width:100%;font:600 16px var(--body);min-height:48px;border-radius:12px;border:0;background:var(--accent);color:var(--surface);cursor:pointer}
+  .status h2{font-size:22px}
+}
+.railbody{display:flex;flex-direction:column;gap:20px}
+.done{display:none}
+@media (max-width:860px){.rail.open .done{display:block}}
 .results{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;font:inherit;color:inherit;transition:border-color .15s,transform .15s}
 .card:hover{border-color:var(--accent);transform:translateY(-1px)}
@@ -143,7 +169,9 @@ footer{color:var(--muted);font-size:13px;padding-block:0 32px}
 </header>
 
 <main class="wrap">
-  <aside class="rail" aria-label="Filters">
+  <aside class="rail" id="rail" aria-label="Filters">
+    <button type="button" class="filtertoggle" id="filterToggle" aria-expanded="false" aria-controls="railBody"><span>Filters<span class="n" id="filterCount" hidden></span></span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+    <div class="railbody" id="railBody">
     <button type="button" class="clearbtn" id="clear2"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13"/></svg>Clear all filters</button>
     <div class="facet">
       <h3>Show</h3>
@@ -156,6 +184,8 @@ footer{color:var(--muted);font-size:13px;padding-block:0 32px}
     <div id="facets"></div>
     <div class="facet toggles">
       <label><input type="checkbox" id="showDraft" checked> Include proposed new careers</label>
+    </div>
+    <button type="button" class="done" id="filtersDone">Show matches</button>
     </div>
   </aside>
 
@@ -226,9 +256,10 @@ function score(p){
 }
 
 function renderFacets(){
-  $("#facets").innerHTML = Object.entries(FACETS).map(([k,f])=>`<div class="facet" style="margin-bottom:20px"><h3>${f.label}</h3><div class="chips">${f.opts.map(o=>`<button type="button" class="chip" data-f="${k}" data-v="${esc(o)}" aria-pressed="${state.sel[k].includes(o)}">${esc(o)}</button>`).join("")}</div></div>`).join("");
+  $("#facets").innerHTML = Object.entries(FACETS).map(([k,f])=>`<div class="facet group"><h3><span>${f.label}</span><span class="gc" data-gc="${k}" hidden></span></h3><div class="chips">${f.opts.map(o=>`<button type="button" class="chip" data-f="${k}" data-v="${esc(o)}" aria-pressed="${state.sel[k].includes(o)}">${esc(o)}</button>`).join("")}</div></div>`).join("");
 }
 function render(){
+  document.querySelectorAll("[data-gc]").forEach(g=>{const n=state.sel[g.dataset.gc].length;g.textContent=n+" selected";g.hidden=!n;});
   document.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",state.sel[c.dataset.f].includes(c.dataset.v)));
   document.querySelectorAll("#kindSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===state.kind));
   const active = state.q.trim() || Object.values(state.sel).some(a=>a.length);
@@ -237,6 +268,7 @@ function render(){
   const roles=list.filter(r=>r.p.kind==="role").length, ppl=list.length-roles;
   $("#count").textContent = active ? `${list.length} match${list.length===1?"":"es"}` : "All profiles";
   $("#sub").textContent = `${roles} career path${roles===1?"":"s"} · ${ppl} role model${ppl===1?"":"s"}${active?" · best matches first":" · pick filters or type keywords to rank them"}`;
+  const nSel=Object.values(state.sel).reduce((a,b)=>a+b.length,0);$("#filterCount").textContent=nSel;$("#filterCount").hidden=!nSel;
   $("#clear").disabled=!active;$("#clear2").disabled=!active;
   $("#results").innerHTML = list.length ? list.map(({p,s,max,hits})=>{
     const pct = active&&max? Math.round(100*Math.min(1,s/max)) : null;
@@ -297,6 +329,9 @@ document.addEventListener("click",e=>{
   if(e.target.id==="closeSheet"||e.target.id==="scrim")closeSheet();
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#sheet").hidden)closeSheet();});
+const setRail=o=>{$("#rail").classList.toggle("open",o);$("#filterToggle").setAttribute("aria-expanded",o);};
+$("#filterToggle").addEventListener("click",()=>setRail(!$("#rail").classList.contains("open")));
+$("#filtersDone").addEventListener("click",()=>{setRail(false);$("#count").scrollIntoView({behavior:"smooth",block:"start"});});
 $("#q").addEventListener("input",e=>{state.q=e.target.value;render();});
 $("#searchForm").addEventListener("submit",e=>e.preventDefault());
 $("#showDraft").addEventListener("change",e=>{state.draft=e.target.checked;render();});
