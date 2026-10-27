@@ -136,6 +136,28 @@ aside.rail{display:flex;flex-direction:column;gap:20px}
 .sheet ul{margin:0;padding-left:18px}
 .sheet li{margin-bottom:3px}
 .sheet blockquote{margin:0;padding:10px 14px;border-left:3px solid var(--tide);background:var(--surface-2);border-radius:0 8px 8px 0;font-size:15px}
+.sheet blockquote.challenge{border-left-color:var(--draft)}
+.sheet .lead{font-size:17px;line-height:1.45;margin:0 0 4px}
+.sheet .prose{margin:0;max-width:62ch}
+.timeline{list-style:none;margin:4px 0 0;padding:0 0 0 22px;position:relative}
+.timeline::before{content:"";position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.timeline li{position:relative;margin:0 0 8px}
+.timeline li::before{content:"";position:absolute;left:-21px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--tide)}
+.timeline li.now{font-weight:600}
+.timeline li.now::before{background:var(--accent);border-color:var(--accent)}
+.minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.mini{display:flex;gap:10px;align-items:center;text-align:left;font:inherit;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--ink);cursor:pointer;min-width:0}
+.mini:hover{border-color:var(--accent)}
+.mini img,.mini .mono{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover}
+.mini .mono.role{border-radius:8px;font-size:14px}
+.mini > span:not(.mono){min-width:0;display:flex;flex-direction:column}
+.mini .mono{display:grid;place-items:center}
+.mini b{font-weight:600;font-size:14.5px;line-height:1.2}
+.mini small{color:var(--muted);font-size:12.5px;line-height:1.3}
+.glance{display:flex;flex-direction:column;gap:8px}
+.tagline{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:start;font-size:13px}
+.tagline b{color:var(--muted);font-weight:600;padding-top:3px}
+.srcnote{margin-top:22px;font-size:13px;color:var(--muted)}
 .tagrow{display:flex;flex-wrap:wrap;gap:5px}
 .tagrow span{font-size:12.5px;padding:3px 8px;border-radius:5px;background:var(--accent-soft);color:var(--accent)}
 .related{display:flex;flex-direction:column;gap:6px}
@@ -238,7 +260,7 @@ const initials = p => p.kind==="person" ? p.person.split(" ").map(w=>w[0]).filte
 // synonyms so free text lands on facet values
 const SYN = {acoustic:"Acoustics & PAM",pam:"Acoustics & PAM",sound:"Acoustics & PAM",hydrophone:"Acoustics & PAM",noise:"Acoustics & PAM",drone:"Drones & aerial survey",uas:"Drones & aerial survey",aerial:"Drones & aerial survey",r:"Coding (R / Python)",python:"Coding (R / Python)",code:"Coding (R / Python)",coding:"Coding (R / Python)",programming:"Coding (R / Python)",gis:"GIS & mapping",map:"GIS & mapping",mapping:"GIS & mapping",vet:"Veterinary & medical",veterinary:"Veterinary & medical",stranding:"Hands-on animal care",strandings:"Hands-on animal care",rescue:"Rescue & rehab",rehab:"Rescue & rehab",genetics:"Genetics & lab methods",dna:"Genetics & lab methods",lab:"Lab",offshore:"At sea / offshore",sea:"At sea / offshore",boat:"At sea / offshore",vessel:"At sea / offshore",office:"Office / remote",remote:"Office / remote",policy:"Policy & management",law:"Regulation & compliance",regulation:"Regulation & compliance",compliance:"Regulation & compliance",teach:"Teaching & mentoring",teaching:"Teaching & mentoring",mentoring:"Teaching & mentoring",outreach:"Communication & outreach",education:"Communication & outreach",grants:"Fundraising & grants",funding:"Fundraising & grants",stats:"Data analysis & stats",statistics:"Data analysis & stats",data:"Data analysis & stats",tourism:"Eco-tourism",guide:"Eco-tourism",ngo:"NGO & charity",charity:"NGO & charity",government:"Government",academia:"Academia",university:"Academia",phd:"PhD",travel:"Frequent travel",management:"Leadership & project mgmt",leadership:"Leadership & project mgmt"};
 
-const textOf = p => [p.title,p.person,p.summary,...(p.activities||[]),...(p.keyskills||[]),...(p.education||[]),...(p.path||[]),p.advice,...p.skills,...p.setting,...p.sector,...p.lifestyle,...p.entry].filter(Boolean).join(" ").toLowerCase();
+const textOf = p => [p.title,p.person,p.summary,p.overview,p.workPattern,p.drivers,p.challenges,...(p.role||[]),...(p.entryRoute||[]),...(p.progression||[]),...(p.activities||[]),...(p.keyskills||[]),...(p.education||[]),...(p.path||[]),...p.skills,...p.setting,...p.sector,...p.lifestyle,...p.entry].filter(Boolean).join(" ").toLowerCase();
 P.forEach(p=>p._t=textOf(p));
 const tagsOf = p => [...p.setting,...p.sector,...p.skills,...p.lifestyle,...p.entry];
 
@@ -291,23 +313,42 @@ function related(p){
 let lastFocus=null;
 function openSheet(id){
   const p=P.find(x=>x.id===id); if(!p)return;
+  const isP=p.kind==="person";
   const list=(h,a)=>a&&a.length?`<h5>${h}</h5><ul>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"";
-  const tags=(h,a)=>`<h5>${h}</h5><div class="tagrow">${a.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`;
+  const para=(h,t,cls)=>t?`<h5>${h}</h5><p class="${cls||"prose"}">${esc(t)}</p>`:"";
+  const tags=(h,a)=>`<div class="tagline"><b>${h}</b><div class="tagrow">${a.map(x=>`<span>${esc(x)}</span>`).join("")}</div></div>`;
+  const timeline=a=>a&&a.length?`<h5>Path to this role</h5><ol class="timeline">${a.map((x,i)=>`<li${i===a.length-1?' class="now"':""}>${esc(x)}</li>`).join("")}</ol>`:"";
+  const person=o=>`<button type="button" class="mini" data-id="${o.id}"><img src="assets/people/${o.id}.jpg" alt=""><span><b>${esc(o.person)}</b><small>${esc(o.title)}</small></span></button>`;
+  const roleBtn=o=>`<button type="button" class="mini" data-id="${o.id}"><span class="mono role" aria-hidden="true">${esc(initials(o))}</span><span><b>${esc(o.title)}</b><small>${o.draft?"Proposed career path":"Career path"}</small></span></button>`;
+  const models=(p.models||[]).map(m=>P.find(x=>x.id===m)).filter(Boolean);
+  const pathsLikeThis=isP?P.filter(o=>o.kind==="role"&&(o.models||[]).includes(p.id)&&(state.draft||!o.draft)):[];
   $("#sheetIn").innerHTML = `<button type="button" class="close" id="closeSheet">Close</button>
-    <div class="kind ${p.draft?"draft":""}">${p.kind==="person"?"Role model":p.draft?"Proposed career path":"Career path"}</div>
-    ${p.kind==="person"?`<img class="portrait" src="assets/people/${p.id}.jpg" alt="${esc(p.person)}">`:""}
-    <h2 id="sheetTitle">${esc(p.kind==="person"?p.person:p.title)}</h2>
-    ${p.kind==="person"?`<p class="who">${esc(p.title)}</p>`:""}
-    <p>${esc(p.summary)}</p>
+    <div class="kind ${p.draft?"draft":""}">${isP?"Role model":p.draft?"Proposed career path":"Career path"}</div>
+    ${isP?`<img class="portrait" src="assets/people/${p.id}.jpg" alt="${esc(p.person)}">`:""}
+    <h2 id="sheetTitle">${esc(isP?p.person:p.title)}</h2>
+    ${isP?`<p class="who">${esc(p.title)}</p>`:""}
+    <p class="lead">${esc(p.summary)}</p>
     ${p.draft?`<div class="draftnote">Draft profile proposed for the SIG to review. Not yet part of the published brochure; content needs checking by a practitioner.</div>`:""}
-    ${list("What the work involves",p.activities)}
-    ${list("Education & training",p.education)}
-    ${list("Career path",p.path)}
-    ${list("Key skills & experience",p.keyskills)}
-    ${p.advice?`<h5>In their words (summarised)</h5><blockquote>${esc(p.advice)}</blockquote>`:""}
-    ${tags("Where",p.setting)}${tags("Sector",p.sector)}${tags("Skills",p.skills)}${tags("Lifestyle",p.lifestyle)}${tags("Typical entry",p.entry)}
+    ${isP?`
+      ${list("Current role",p.role)}
+      ${timeline(p.path)}
+      ${list("Education & training",p.education)}
+      ${list("Key skills",p.keyskills)}
+      ${p.drivers?`<h5>What drives them</h5><blockquote>${esc(p.drivers)}</blockquote>`:""}
+      ${p.challenges?`<h5>Challenges</h5><blockquote class="challenge">${esc(p.challenges)}</blockquote>`:""}
+      ${pathsLikeThis.length?`<h5>Career paths like theirs</h5><div class="minis">${pathsLikeThis.map(roleBtn).join("")}</div>`:""}
+    `:`
+      ${para("Overview",p.overview)}
+      ${models.length?`<h5>Meet people doing this work</h5><div class="minis">${models.map(person).join("")}</div>`:""}
+      ${list("What the work involves",p.activities)}
+      ${list("Key skills & experience",p.keyskills)}
+      ${list("How to get in",p.entryRoute)}
+      ${para("Work pattern",p.workPattern)}
+      ${list("Where it can lead",p.progression)}
+    `}
+    <h5>At a glance</h5><div class="glance">${tags("Where",p.setting)}${tags("Sector",p.sector)}${tags("Lifestyle",p.lifestyle)}${tags("Typical entry",p.entry)}${tags("Skills",p.skills)}</div>
     <h5>Similar profiles</h5><div class="related">${related(p).map(o=>`<button type="button" data-id="${o.id}"><b>${esc(o.kind==="person"?o.person:o.title)}</b><br><small>${o.kind==="person"?esc(o.title):o.draft?"Proposed career path":"Career path"}</small></button>`).join("")}</div>
-    ${p.kind==="person"?`<p style="margin-top:20px;font-size:14px;color:var(--muted)">Full case study: imarest.org/rolemodels</p>`:""}`;
+    <p class="srcnote">${isP?`Adapted from the IMarEST role model case study. More at imarest.org/rolemodels.`:p.draft?"":`Activities and key skills are from the 2022 brochure. Overview, how to get in, work pattern and where it can lead are new drafts for SIG review.`}</p>`;
   $("#sheet").hidden=false;$("#scrim").hidden=false;$("#sheet").scrollTop=0;
   $("#closeSheet").focus();
 }
@@ -320,7 +361,7 @@ document.addEventListener("click",e=>{
   if(chip){const a=state.sel[chip.dataset.f],v=chip.dataset.v,i=a.indexOf(v);i<0?a.push(v):a.splice(i,1);render();return;}
   const card=e.target.closest(".card");
   if(card){lastFocus=card;openSheet(card.dataset.id);return;}
-  const rel=e.target.closest(".related button");
+  const rel=e.target.closest(".related button, .mini");
   if(rel){openSheet(rel.dataset.id);return;}
   const pre=e.target.closest("#presets button");
   if(pre){const p=PRESETS[+pre.dataset.i];for(const k in state.sel)state.sel[k]=[...(p.sel[k]||[])];state.q="";$("#q").value="";render();$("#results").scrollIntoView({behavior:"smooth",block:"start"});return;}
